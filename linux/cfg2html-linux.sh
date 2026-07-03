@@ -2957,6 +2957,37 @@ then # else skip to next paragraph
 fi  # end of CFG_VMWARE paragraph
 ##############################################################################
 
+##############################################################################
+###   Docker / Podman container runtime information
+##############################################################################
+
+if [ "${CFG_CONTAINERS}" != "no" ]
+then # else skip to next paragraph
+
+  for RUNTIME in docker podman; do
+    BIN=$(which "${RUNTIME}" 2>/dev/null)
+    if [ -n "${BIN}" ]; then
+
+      paragraph "${RUNTIME} container runtime"
+      inc_heading_level
+        # Deliberately no "inspect" here: container env vars often carry
+        # secrets (DB passwords, API keys) and this report may be shared
+        # for DR/support purposes.
+        exec_command "${BIN} version"    "${RUNTIME} version"
+        exec_command "${BIN} info"       "${RUNTIME} system info"
+        exec_command "${BIN} images"     "${RUNTIME} images"
+        exec_command "${BIN} ps -a"      "${RUNTIME} containers (running + stopped)"
+        exec_command "${BIN} network ls" "${RUNTIME} networks"
+        exec_command "${BIN} volume ls"  "${RUNTIME} volumes"
+        exec_command "${BIN} system df"  "${RUNTIME} disk usage"
+      dec_heading_level
+
+    fi
+  done
+
+fi  # end of CFG_CONTAINERS paragraph
+##############################################################################
+
 #
 # execute custom plugins   -- anaumann 2009/07/10
 #
