@@ -2966,7 +2966,7 @@ then # else skip to next paragraph
 
   for RUNTIME in docker podman; do
     BIN=$(which "${RUNTIME}" 2>/dev/null)
-    if [ -n "${BIN}" ]; then
+    if [ -n "${BIN}" ] && [ -x "${BIN}" ]; then
 
       paragraph "${RUNTIME} container runtime"
       inc_heading_level
