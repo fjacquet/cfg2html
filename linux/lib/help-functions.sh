@@ -31,6 +31,7 @@ function usage {
   echo "    -l      disable: LVM"
   echo "    -z      disable: ZFS"
   echo "    -c      disable: Cron"
+  echo "    -C      disable: Docker/Podman container runtime information"
   echo "    -O      disable: listing of open but deleted files (only effective if System is not disabled, ie. -s is not specified)" # modified on 20240119 by edrulrd
   echo "    -L      disable: Screen tips inline, and do not display the issued command" # modified on 20240119 by edrulrd 
   echo "    -e      disable: Enhancements"

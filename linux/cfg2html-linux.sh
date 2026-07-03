@@ -99,7 +99,7 @@ _VERSION="cfg2html-linux version ${VERSION} "  # this a common stream so we don?
 # getopt
 #
 
-while getopts ":o:shxOcSTflzkenaHLvhpPAV2:10w:" Option   ##  -T -0 -1 -2 backported from HPUX # added new options -x and -O and removed the need for an argument on -A, also added -w, -z  and -V # modified on 20240119 by edrulrd
+while getopts ":o:shxOcCSTflzkenaHLvhpPAV2:10w:" Option   ##  -T -0 -1 -2 backported from HPUX # added new options -x and -O and removed the need for an argument on -A, also added -w, -z  and -V # modified on 20240119 by edrulrd
 do
   case ${Option} in
     o     ) OUTDIR=${OPTARG};;
@@ -109,6 +109,7 @@ do
     x     ) CFG_PATHLIST="no";; # don't generate the list of executables in the PATH # added on 20201025 by edrulrd
     O     ) CFG_LSOFDEL="no";; # skip showing the list of open files that have been deleted # added on 20201026 by edrulrd
     c     ) CFG_CRON="no";;
+    C     ) CFG_CONTAINERS="no";; # disable Docker/Podman container runtime collection
     S     ) CFG_SOFTWARE="no";;
     f     ) CFG_FILESYS="no";;
     l     ) CFG_LVM="no";;
