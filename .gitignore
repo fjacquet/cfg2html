@@ -48,3 +48,4 @@ sshkey.sh
 linux/debian/
 
 .vscode/spellright.dict
+.worktrees/
