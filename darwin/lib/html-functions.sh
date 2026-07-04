@@ -103,8 +103,14 @@ function paragraph() {
     echo "<A NAME=\"Inhalt-$1\"></A><A HREF=\"#$1\">$1</A>" >> ${HTML_OUTFILE}
     _echo "\nCollecting: " $1 " .\c"
     echo "    $1 ---- " >> ${TEXT_OUTFILE}
-    let p_len=$(echo $1 | wc -c)  # get the length of the title # added on 20240119 by edrulrd
-    let p_len-- # adjust the length # added on 20240119 by edrulrd
+    # NOTE (darwin port): the original "let p_len=$(echo $1 | wc -c)" form is
+    # unquoted, so word-splitting the leading-whitespace-padded wc output
+    # (e.g. "      37") makes it two arguments to "let" and it silently
+    # fails whenever $1 contains a space -- true under both bash and zsh,
+    # verified. Rewritten to a quoted plain assignment + $(( )) arithmetic,
+    # which isn't subject to word-splitting.
+    p_len=$(echo "$1" | wc -c)  # get the length of the title # added on 20240119 by edrulrd
+    p_len=$((p_len - 1)) # adjust the length # added on 20240119 by edrulrd
     _echo "\n\n#========================================================================================" | cut -c1-${p_len} >> ${TEXT_OUTFILE_TEMP} # highlight around the command # added on 20240119 by edrulrd
     _echo "$1" >> ${TEXT_OUTFILE_TEMP} # Add the paragraph title to the ASCII file too # added on 20240119 by edrulrd
     _echo "#========================================================================================" | cut -c1-${p_len} >> ${TEXT_OUTFILE_TEMP} # on both sides # added on 20240119 by edrulrd
