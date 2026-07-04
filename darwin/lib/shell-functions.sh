@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 # @(#) $Id: shell-functions.sh,v 6.10.1.1 2013-09-12 16:13:15 ralph Exp $
 #     Further modified by Joe Wulf:  20200321@1658.
 # -------------------------------------------------------------------------
@@ -8,10 +9,29 @@ function line {
 }
 
 function _banner {
+    # NOTE (darwin port): based on upstream's own fix for this same bug
+    # (linux/lib/shell-functions.sh, added 2025-05-21) -- prefer toilet if
+    # present (handles long text via -w), otherwise fall back to plain echo
+    # for anything 11+ chars since classic "banner" renders each character
+    # as giant ASCII-art blocks and produces pages of unreadable output for
+    # a full sentence (hostnames, dates, version strings -- confirmed on a
+    # real run, since macOS ships /usr/bin/banner by default unlike most
+    # minimal Linux installs). Uses "command -v" instead of upstream's
+    # "which": zsh's "which" is a builtin that prints "X not found" to
+    # STDOUT (not stderr) on failure, so BANNER_EXE/TOILET_EXE would end up
+    # holding that literal garbage string instead of being empty -- verified
+    # this breaks upstream's own fix under this port's zsh emulation.
+    # "command -v" is POSIX-specified and behaves identically (clean empty
+    # output on failure) under bash, zsh, and ksh.
     typeset txt="$*"
-    BANNER_EXE=$(which banner 2>/dev/null)
-    [[ -z "${BANNER_EXE}" ]] && BANNER_EXE=echo
-    ${BANNER_EXE} "$txt"
+    BANNER_EXE=$(command -v banner 2>/dev/null)
+    BANNER_EXE_saved="${BANNER_EXE}"
+    TOILET_EXE=$(command -v toilet 2>/dev/null)
+    [[ -n "${TOILET_EXE}" ]] && BANNER_EXE="${TOILET_EXE} -w ${CFG_TEXTWIDTH}" || { [[ -z "${BANNER_EXE}" ]] && BANNER_EXE="echo"; }
+    if [[ "${BANNER_EXE}" == "${BANNER_EXE_saved}" ]] && [[ ${#txt} -ge 11 ]]; then
+       BANNER_EXE="echo"
+    fi
+    ${BANNER_EXE} "${txt}"
 }
 
 function check_root {

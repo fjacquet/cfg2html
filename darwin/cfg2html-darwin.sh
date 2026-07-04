@@ -69,7 +69,7 @@ if [ ! -f "${HTML_OUTFILE}" ]; then
      exit 1
 fi
 
-[ "$(which logger 2>/dev/null)" ] && export _logger="$(which logger)" || export _logger='echo'
+[ "$(command -v logger 2>/dev/null)" ] && export _logger="$(command -v logger)" || export _logger='echo' # uses "command -v", not "which": zsh's "which" builtin prints "X not found" to stdout on a miss, which would make this non-empty even when logger is absent
 ${_logger} "1st Start of cfg2html-darwin ${VERSION}"
 RECHNER=$(hostname)
 typeset -i HEADL=0
@@ -208,7 +208,7 @@ inc_heading_level
   exec_command "pkgutil --pkgs" "Installed Apple/vendor installer packages"
   exec_command "softwareupdate --history" "Software update history"
 
-  BREW=$(which brew 2>/dev/null)
+  BREW=$(command -v brew 2>/dev/null) # "command -v", not "which": zsh's "which" builtin prints "X not found" to stdout on a miss instead of nothing
   if [ -n "${BREW}" ] && [ -x "${BREW}" ]; then
     exec_command "${BREW} list" "Homebrew packages installed"
   fi
