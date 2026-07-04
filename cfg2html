@@ -22,10 +22,13 @@ if [ ! -f /tmp/cfg2html.respawn ]; then # re-added the not "!" operator so we re
                             "HP-UX" ) exec /usr/bin/ksh ${PRGNAME} ${args}         2>&1 ;;
                             "Linux" ) exec /bin/bash -O extglob ${PRGNAME} ${args} 2>&1 ;;
                             "SunOS" ) exec /usr/bin/ksh ${PRGNAME} ${args}         2>&1 ;;
+                           "Darwin" ) exec /bin/zsh ${PRGNAME} ${args}             2>&1 ;;
                                  *  ) echo "WARNING: Unsupported Operating System, continuing anyway" # prior code just continued on # modified on 20201031 by edrulrd
                                         ;;
     esac
 fi
+
+[ -n "${ZSH_VERSION}" ] && emulate -R sh
 
 # [20200321] {jcw} Obviously the 'exec' continues through to here.
 STARTTIME="${SECONDS}"
@@ -61,7 +64,7 @@ trap "DoExitTasks" 0 1 2 3 6 11 15
 # [20200310] {jcw} Should manage the TMP_DIR assignment, based on the configuration file, and or cmd-line option.
 case ${MY_OS} in
     HP-UX) TMP_DIR="$(mktemp -d /tmp -p cfg2html_)" ;;
-    Linux|SunOS) TMP_DIR="$(mktemp -d /tmp/cfg2html.XXXXXXXXXXXXXXX)" ;;
+    Linux|SunOS|Darwin) TMP_DIR="$(mktemp -d /tmp/cfg2html.XXXXXXXXXXXXXXX)" ;;
     *) TMP_DIR="/tmp/${PROGRAM}_${RANDOM}" ;;	## hopefully AIX and SUN have $RANDOM too - why not using mktemp too, its safer! RR
 esac
 
