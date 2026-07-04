@@ -1,5 +1,10 @@
 # cfg2html (Config to HTML)
 
+[![Differential ShellCheck](https://github.com/fjacquet/cfg2html/actions/workflows/differential-shellcheck.yml/badge.svg)](https://github.com/fjacquet/cfg2html/actions/workflows/differential-shellcheck.yml)
+[![Build and Release Packages](https://github.com/fjacquet/cfg2html/actions/workflows/build.yml/badge.svg)](https://github.com/fjacquet/cfg2html/actions/workflows/build.yml)
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Latest release](https://img.shields.io/github/v/release/fjacquet/cfg2html?include_prereleases&sort=semver)](https://github.com/fjacquet/cfg2html/releases)
+
 ## Overview
 
 **cfg2html** is a small utility for collecting the necessary system configuration files and system setup into an ASCII file and an HTML file. Easy to use and very useful in disaster recovery situations. cfg2html is written entirely in the native language of system administration: as shell scripts. Experienced users and system administrators can adapt or extend the cfg2html scripts to suit their particular needs, either by using the plugin framework or by modifying the source code.
