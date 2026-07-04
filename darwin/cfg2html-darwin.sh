@@ -125,6 +125,23 @@ dec_heading_level
 fi  # end of CFG_SYSTEM paragraph
 ##############################################################################
 
+#
+# CFG_HARDWARE
+#
+
+if [ "${CFG_HARDWARE}" != "no" ]
+then # else skip to next paragraph
+
+paragraph "macOS Hardware"
+inc_heading_level
+  exec_command "system_profiler SPHardwareDataType" "Hardware overview"
+  exec_command "system_profiler SPMemoryDataType" "Memory configuration"
+  exec_command "sysctl hw" "hw.* sysctl values"
+dec_heading_level
+
+fi  # end of CFG_HARDWARE paragraph
+##############################################################################
+
 dec_heading_level
 close_html
 
