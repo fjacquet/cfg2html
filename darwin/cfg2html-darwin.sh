@@ -195,6 +195,28 @@ dec_heading_level
 fi  # end of CFG_NETWORK paragraph
 ##############################################################################
 
+#
+# CFG_SOFTWARE
+#
+
+if [ "${CFG_SOFTWARE}" != "no" ]
+then # else skip to next paragraph
+
+paragraph "macOS Software"
+inc_heading_level
+  exec_command "system_profiler SPApplicationsDataType" "Installed applications (detailed)"
+  exec_command "pkgutil --pkgs" "Installed Apple/vendor installer packages"
+  exec_command "softwareupdate --history" "Software update history"
+
+  BREW=$(which brew 2>/dev/null)
+  if [ -n "${BREW}" ] && [ -x "${BREW}" ]; then
+    exec_command "${BREW} list" "Homebrew packages installed"
+  fi
+dec_heading_level
+
+fi  # end of CFG_SOFTWARE paragraph
+##############################################################################
+
 dec_heading_level
 close_html
 
