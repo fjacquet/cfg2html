@@ -11,8 +11,8 @@
 #
 # @(#) $Id: cfg2html-linux.sh,v 6.72 2024/04/01 20:23:22 ralph Exp $
 # -----------------------------------------------------------------------------------------
-# (c) 1997-2024 by Ralph Roth  -*- http://rose.rult.at -*-  Coding: ISO-8859-15
-#     Further modified by Joe Wulf:  20200407@1432.
+# (c) 1997-2025 by Ralph Roth  -*- http://rose.rult.at -*-  Coding: ISO-8859-15
+
 
 #  If you change this script, please mark your changes with for example
 #  ## <username> and send your diffs from the actual version to my mail
@@ -42,14 +42,11 @@ CFGSH=$_  ### CFGSH appears unused. Verify use (or export if used externally).
 # -  Rewrite all `<cmd>` to $(<cmd>).
 # -  Add the equivalent of "gconftool-2 -R /system"  "GNOME System Config" for newer Gnome systems (i.e. gsettings) # added on 20240322 by edrulrd
 # -
-# -
 #
 
 # {jcw} Done:
 # -  Accomplished massive rename of variables from $VAR to ${VAR}.
 # -  Rewrite all `<cmd>` to $(<cmd>). # modified on 20240322 by edrulrd
-# -
-# -
 # -
 #
 
@@ -99,7 +96,7 @@ _VERSION="cfg2html-linux version ${VERSION} "  # this a common stream so we don?
 # getopt
 #
 
-while getopts ":o:shxOcCSTflzkenaHLvhpPAV2:10w:" Option   ##  -T -0 -1 -2 backported from HPUX # added new options -x and -O and removed the need for an argument on -A, also added -w, -z  and -V # modified on 20240119 by edrulrd
+while getopts ":o:shxOcCSTflzkenaHLvhpPAV2:10w:W" Option   ##  -T -0 -1 -2 backported from HPUX # added new options -x and -O and removed the need for an argument on -A, also added -w, -z  and -V, added -W # modified on 20250215 by edrulrd, added -C on 20240119 by edrulrd
 do
   case ${Option} in
     o     ) OUTDIR=${OPTARG};;
@@ -123,6 +120,7 @@ do
     A     ) CFG_ALTIRISAGENTFILES="no";;
     L     ) CFG_STINLINE="no";;
     w     ) CFG_TEXTWIDTH="${OPTARG}";; # override the default width in the generated .txt file for section titles # added on 20240119 by edrulrd
+    W     ) CFG_WHICHHUNT="yes";; # Log any commands that the which command cannot find into the Err log file # added on 20250215 by edrulrd
     p     ) CFG_HPPROLIANTSERVER="yes";;
     P     ) CFG_PLUGINS="yes";;
     2     ) CFG_DATE="_"$(date +"${OPTARG}") ;;
@@ -157,7 +155,7 @@ MAILTORALPH="cfg2html&#64;&#104;&#111;&#116;&#109;&#97;&#105;&#108;&#46;&#99;&#1
 # History
 #####################################################################
 # 28-jan-1999  initial creation, based on get_config, check_config
-#              nickel, snapshoot, vim and a idea from a similar
+#              nickel, snapshot, vim and a idea from a similar
 #              script i have seen on-site.
 #####################################################################
 # 11-Mar-2001  initial creation for Debian GNU Linux i386
@@ -190,6 +188,24 @@ DATEFULL=$(date "+%Y-%m-%d@%H:%M:%S") # ISO8601 compliant date and time string
 
 # [20200311] {jcw} My comment; this restarts the process from within this same shell; all errors now go to the named log file.
 exec 2> "${ERROR_LOG}"
+
+# Special which command processing to log commands that are not installed on the system. (-W option) # added on 20250215 by edrulrd
+# --------------------------------------------------------------------------------------------------
+# The "which" command is called in this script in a few different ways, probably for historical reasons.
+# 1) Sometimes the which command is simply called as "which programname".
+#    In this case, there is no sub-shell involved and the program just runs in the shell's execution
+#    environment which allows variables to be modified and passed to other execution environments.
+# 2) Another way the "which" command is called is as "var=$(which programname)".
+#    In this case, a subshell environment is created and variables in the main shell environment cannot be adjusted.  Read, yes, modified, no.
+# Our new "which" command processing makes use of some variables to reduce the clutter generated in the error log.  So, this
+# simply means that these variables need to be set up and properly set before the which command is called from a subshell environment.
+# This explains why we issue the next 2 commands - one that should always be on the system, and another which no one is likely to have.
+# Their purpose is to set some variables appropriately for all subsequent "which" command calls.
+# Finally, these 2 commands need to be executed after the environment that this program uses has been set up (ie. after the exec call above),
+# otherwise, messages get lost.
+NONSENSECMD=deliberatelynotfound # Use this as a command that we know won't be found to do command-not-found setup, and don't report on it in the new function # added on 20250215 by edrulrd
+which date             > /dev/null 2>/dev/null  # execute a command that is always likely to be found on the system - to set up special which command processing # added on 20250215 by edrulrd
+which "${NONSENSECMD}" > /dev/null 2>/dev/null  # execute any command that is not likely to be found on the system - ditto # added on 20250215 by edrulrd
 
 if [ ! -f "${HTML_OUTFILE}" ]; then
      line
@@ -263,6 +279,16 @@ then # else skip to next paragraph
 paragraph "Linux System:  [${distrib}]"   ## empty? ## FIXME ###
 inc_heading_level
 
+  # If systemd-detect-virt is available, let's just use it instead of checking multiple possible sources
+  SYSDETECT=$(which systemd-detect-virt 2>/dev/null)  # Added 20250209 by edrulrd
+  if [ -n "${SYSDETECT}" ] && [ -x "${SYSDETECT}" ] ; then
+    if ! "${SYSDETECT}" > /dev/null 2>&1 ; then # RC != 0 -> physical server
+      exec_command "${SYSDETECT}" 'Host is Physical.'
+    else
+      exec_command "${SYSDETECT}" 'Host is Virtual.'
+    fi
+  else #check several potential sources for determining virtualization status
+
   # Given the existence of the virt-what command, do we still need this section of code? # added on 20240303 by edrulrd
   ###################################################################################################################################################################
   # [20200324] {jcw}  Added section for determining if this is a physical host (Red Hat KVM/xen or VMware ESX) or virtual machine (VM).
@@ -299,7 +325,7 @@ inc_heading_level
 
   touch PhysVirt.info_Pt2; chmod 0600 PhysVirt.info_Pt2; chown 0:0 PhysVirt.info_Pt2; sync;sync
 
-  for VIRTs in dom0 domu kvm paravirt qemu virtio vmware xen; do # look for these strings in various places # fix typo in dom0 # modified on 20240303 by edrulrd
+  for VIRTs in paravirtualized dom0 domu kvm qemu virtio vmware xen; do # look for these strings in various places # fix typo in dom0 # modified on 20250207 by edrulrd
       VIRTterm='unset'                                        # Local value used within the loop.
 
       VIRTci='unset'                                          # /proc/cpuinfo   # These are only used to display state.
@@ -309,50 +335,85 @@ inc_heading_level
       VIRTdd='unset'                                          # dmidecode {the command}
       VIRTls='unset'                                          # /sbin/lspci {the command}
 
-      # These are only indented this way so as to visually distinguish them; there is no desire/need to if-then-else them!
-      if  grep -iq "${VIRTs}" /proc/cpuinfo ; then
-           VIRTterm='TRUE'
-           VIRTci='TRUE'
+      # Check for paravirtualized message first as a definitive indication.
+      # And check the journalctl command first since it can go back to boot time.
+      if [ -n "${JOURNAL}" ] &&  ${JOURNAL} --system --boot 2>/dev/null | grep -iq -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)' ; then # modified on 20250207 by edrulrd
+        if [ "${VIRTs}" == 'paravirtualized' ]; then # added on 20250207 by edrulrd
+          if ${JOURNAL} --system --boot 2>/dev/null | grep -iq -m 1 'Booting paravirtualized kernel' ; then # added on 20250207 by edrulrd
+             if ! ${JOURNAL} --system --boot 2>/dev/null | grep -iq -m 1 'Booting paravirtualized kernel on bare hardware' ; then # modified on 20250207 by edrulrd
+               VIRTterm='TRUE'
+               VIRTjn='TRUE'
+             fi # added on 20250207 by edrulrd
+          fi
+        else # not paravirtualized # added on 20250207 by edrulrd
+           if  [ ${VMparavirtkrnl} != 'TRUE' ]; then  # only set as virtual if we've not found the paravirtualized kernel message # added on 20250207 by edrulrd
+             VIRTterm='TRUE' # added on 20250207 by edrulrd
+             VIRTjn='TRUE' # added on 20250207 by edrulrd
+             # Since the ${VIRTs} string could be in the journal for several different reasons which do not imply being in a VM or not, issue a note # added on 20250212 by edrulrd
+             echo "VIRTs(${VIRTs}): False result?: $(${JOURNAL} --system --boot 2>/dev/null | grep -i -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)')" >> PhysVirt.info_Pt2 # added on 20250212 by edrulrd
+           fi # added on 20250207 by edrulrd
+        fi # added on 20250207 by edrulrd
       fi
 
-      # These are only indented this way so as to visually distinguish them; there is no desire/need to if-then-else them!
-      if [ -n "${DMESG}" ] &&  ${DMESG} | grep -iq ${VIRTs} ; then
-           # Using the 'dmesg' command is useful for some number of days after the system was last booted;
-           # beyond that, the /var/log/dmesg file is a good alternate datapoint.
-           # See also https://github.com/cfg2html/cfg2html/issues/153
-           if ! ${DMESG} | grep -q 'Booting paravirtualized kernel on bare hardware' ; then
-                # This exception catches the one case of installing RHEL/CentOS on a real physical machine.  This IS properly/necessarily nested!
-                VIRTterm='TRUE'
-                VIRTdc='TRUE'
-           fi
+      # Check the dmesg command
+      if [ -n "${DMESG}" ] &&  ${DMESG} | grep -iq -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)'; then # modified on 20250207 by edrulrd
+        if [ "${VIRTs}" == 'paravirtualized' ]; then # added on 20250207 by edrulrd
+          # Using the 'dmesg' command is useful for some number of days after the system was last booted;
+          # beyond that, the /var/log/dmesg file is a good alternate datapoint.
+          # See also https://github.com/cfg2html/cfg2html/issues/153
+          if ${DMESG} | grep  -iq -m 1 'Booting paravirtualized kernel' ; then # added on 20250207 by edrulrd
+            if ! ${DMESG} | grep -iq -m 1 'Booting paravirtualized kernel on bare hardware' ; then # modified on 20250207 by edrulrd
+              VIRTterm='TRUE'
+              VIRTdc='TRUE'
+            fi # added on 20250207 by edrulrd
+          fi
+        else # not paravirtualized # added on 20250207 by edrulrd
+          if [ ${VMparavirtkrnl} != 'TRUE' ]; then # only set as virtual if we've not found the paravirtualized kernel message # added on 20250207 by edrulrd
+            VIRTterm='TRUE' # added on 20250207 by edrulrd
+            VIRTdc='TRUE' # added on 20250207 by edrulrd
+            # Since the ${VIRTs} string could be in the kernel ring buffer for several different reasons which do not imply being in a VM or not, issue a note # added on 20250212 by edrulrd
+            echo "VIRTs(${VIRTs}): False result?: $(${DMESG} | grep -i -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)')" >> PhysVirt.info_Pt2 # added on 20250212 by edrulrd
+          fi # added on 20250207 by edrulrd
+        fi # added on 20250207 by edrulrd
       fi
 
-      if grep -iq ${VIRTs} /var/log/dmesg 2>/dev/null ; then
-           if ! grep -q 'Booting paravirtualized kernel on bare hardware' /var/log/dmesg 2>/dev/null ; then # check the file for the string # modified on 20240411 by edrulrd
-                  # This exception catches the one case of installing RHEL/CentOS on a real physical machine.  This IS properly/necessarily nested!
-                  VIRTterm='TRUE'
-                  VIRTdf='TRUE'
-           fi
+      # Check the /var/log/dmesg file
+      if grep -iq -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)' /var/log/dmesg 2>/dev/null ; then # modified on 20250207 by edrulrd
+        if [ "${VIRTs}" == 'paravirtualized' ]; then # added on 20250207 by edrulrd
+          if grep -iq -m 1 'Booting paravirtualized kernel' /var/log/dmesg 2>/dev/null ; then # added on 20250207 by edrulrd
+            if ! grep -iq -m 1 'Booting paravirtualized kernel on bare hardware' /var/log/dmesg 2>/dev/null ; then # modified on 20250207 by edrulrd
+              VIRTterm='TRUE'
+              VIRTdf='TRUE'
+            fi
+          fi
+        else # not paravirtualized # added on 20250207 by edrulrd
+          if [ ${VMparavirtkrnl} != 'TRUE' ]; then # only set as virtual if we've not found the paravirtualized kernel message # added on 20250207 by edrulrd
+            VIRTterm='TRUE' # added on 20250207 by edrulrd
+            VIRTdf='TRUE' # added on 20250207 by edrulrd
+            # Since the ${VIRTs} string could be in the kernel ring buffer for several different reasons which do not imply being in a VM or not, issue a note # added on 20250212 by edrulrd
+            echo "VIRTs(${VIRTs}): False result?: $(grep -i -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)' /var/log/dmesg 2>/dev/null)" >> PhysVirt.info_Pt2 # added on 20250212 by edrulrd
+          fi # added on 20250207 by edrulrd
+        fi # added on 20250207 by edrulrd
       fi
 
-      if [ -n "${JOURNAL}" ] &&  ${JOURNAL} --system --boot 2>/dev/null | grep -iq ${VIRTs} ; then # added on 20240303 by edrulrd
-           # some systems don't have /var/log/dmesg, so, let's try to use the system journal since bootup instead as another source # added on 20240303 by edrulrd
-           if ! ${JOURNAL} --system --boot 2>/dev/null | grep -q 'Booting paravirtualized kernel on bare hardware' ; then
-                VIRTterm='TRUE'
-                VIRTjn='TRUE'
-           fi
+      # Check /proc/cpuinfo
+      if grep  -iq -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)' /proc/cpuinfo ; then # modified on 20250207 by edrulrd
+        VIRTterm='TRUE'
+        VIRTci='TRUE'
       fi
 
-      if [ -n "${DMIDECODE}" ] && [ "$(${DMIDECODE} | grep -i ${VIRTs})" != "" ]; then # modified on 20201004 by edrulrd
-           # Value is established up above.
-           VIRTterm='TRUE'
-           VIRTdd='TRUE'
+      # Check the dmidecode command
+      if [ -n "${DMIDECODE}" ] && [ "$(${DMIDECODE} | grep -i -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)')" != "" ]; then # modified on 20250207 by edrulrd
+        # Value is established up above.
+        VIRTterm='TRUE'
+        VIRTdd='TRUE'
       fi
 
-      if [ -n "${LSPCI}" ] && [ "$(${LSPCI} -v | grep -i ${VIRTs})" != "" ]; then # modified on 20201004 by edrulrd
-           # Value is established up above; '-v' to lscpi command provides verbosity.
-           VIRTterm='TRUE'
-           VIRTls='TRUE'
+      # Check the lspci -v command
+      if [ -n "${LSPCI}" ] && [ "$(${LSPCI} -v | grep -i -m 1 -E '(^|[[:blank:]])'"${VIRTs}"'([[:blank:]]|$)')" != "" ]; then # modified on 20250207 by edrulrd
+        # Value is established up above; '-v' to lscpi command provides verbosity.
+        VIRTterm='TRUE'
+        VIRTls='TRUE'
       fi
 
       # Very VMware-based; determine if this is an ESX or a VM, and then use that clue to get and later display the version of VMwareTools (if it can be found).
@@ -361,7 +422,7 @@ inc_heading_level
                 # Is one way to determine it.
                 ESXhost='TRUE'
            else
-                if [ -n "${DMESG}" ] && [ "$(${DMESG} | grep -i vmxnet)" != "" ] || [ -n "${DMIDECODE}" ] && [ "$(${DMIDECODE} | grep -i vmxnet)" != "" ]; then # modified on 20201004 by edrulrd
+                if [ -n "${DMESG}" ] && [ "$(${DMESG} | grep -i -m 1 vmxnet)" != "" ] || [ -n "${DMIDECODE}" ] && [ "$(${DMIDECODE} | grep -i -m 1 vmxnet)" != "" ]; then # modified on 20250207 by edrulrd
                      VIRTterm='TRUE'
                 fi
 
@@ -399,9 +460,7 @@ inc_heading_level
                           VMkvm='TRUE'
                           VMKVM='TRUE'
                           ;;
-                paravirt) #
-                          # Have to do further checks first before just giving in to this one.
-                          # "$(dmesg | grep -i paravirt)" != 'booting paravirtualized kernel on'
+                paravirtualized) # modified on 20250207 by edrulrd
                           VMparavirtkrnl='TRUE'
                           ;;
                     qemu) #
@@ -425,16 +484,16 @@ inc_heading_level
            ESXhost='false'
            VirtMach='TRUE'
            # Determinations are over for ${VIRTs} ... now generate output line.
-           ( echo "VIRTs(${VIRTs}), VIRTterm (${VIRTterm}): VIRTci(${VIRTci}), VIRTdc(${VIRTdc}), VIRTdf(${VIRTdf}), VIRTjn(${VIRTjn}), VIRTdd(${VIRTdd}), VIRTls(${VIRTls})."
+           ( echo "VIRTs(${VIRTs}), VIRTterm (${VIRTterm}): VIRTjn(${VIRTjn}), VIRTdc(${VIRTdc}), VIRTdf(${VIRTdf}), VIRTci(${VIRTci}), VIRTdd(${VIRTdd}), VIRTls(${VIRTls})." # modified on 20250210 by edrulrd
            echo "PhysHost(${PhysHost}), VirtMach(${VirtMach}), VMdom0(${VMdom0}), VMdomU(${VMdomU}), VMkvm(${VMkvm}), VMKVM(${VMKVM}), VMparavirtkrnl(${VMparavirtkrnl}), VMqemu(${VMqemu}), VMvirtio(${VMvirtio}), VMxen(${VMxen}), VMXEN(${VMXEN}), ESXhost(${ESXhost}), VMTver(${VMTver}), VMware(${VMware})."
            echo ) >> PhysVirt.info_Pt2 # make more readable # modified on 20240303 by edrulrd
       fi
   done
 
   ( echo "Note: the physical or virtual environment state was determined by searching for each of these case-insensitive strings:"
-  echo '      "dom0", "domU", "kvm", "paravirt", "qemu", "virtio", "xen", and "vmware"'
+  echo '      "paravirtualized", "dom0", "domU", "kvm", "qemu", "virtio", "xen", and "vmware"' # modified on 20250207 by edrulrd
   echo "      from within the following sources:"
-  echo "      /proc/cpuinfo, dmesg command, /var/log/dmesg file, journalctl command, dmidecode command, and the lspci command."
+  echo "      journalctl command, dmesg command, /var/log/dmesg file, /proc/cpuinfo, dmidecode command, and the lspci command." # modified on 20250210 by edrulrd
   echo "      If the searches failed or if the logs expressly indicated not being virtual, then the system is deemed to be Physical."
   echo ' ' ) >> PhysVirt.info_Pt2 # modified on 20240322 by edrulrd
 
@@ -452,6 +511,7 @@ inc_heading_level
   /bin/rm -f PhysVirt.info PhysVirt.info_Pt2
   unset VMdom0 VMdomU VMkvm VMKVM VMparavirtkrnl VMqemu VMvirtio VMxen VMXEN ESXhost VMTver VMware; sync
   ###################################################################################################################################################################
+  fi
 
   if [ -x /usr/sbin/virt-what ] && VIRTWHAT="$(/usr/sbin/virt-what)" ; then # moved virt-what adjacent to our code that checks if we're virtual # modified on 20240303 by edrulrd
     if [ -n "$VIRTWHAT" ] ; then # output generated, therefore not physical  # added on 20240303 by edrulrd
@@ -726,7 +786,7 @@ inc_heading_level
   # Added by Dusan Baljevic on 24 December 2017
   NEEDRESTART=$(which needs-restarting 2>/dev/null)
   if [ -n "${NEEDRESTART}" ] && [ -x "${NEEDRESTART}" ] ; then
-      exec_command "${NEEDRESTART}" "Report running processes that have been updated and need restart"
+      exec_command "${NEEDRESTART} 2>/dev/null" "Report running processes that have been updated and need to be restarted" # modified on 20250208 by edrulrd
   fi
 
   # Added by Dusan Baljevic on 24 December 2017
@@ -959,6 +1019,12 @@ then # else skip to next paragraph
 paragraph "Hardware"
 inc_heading_level
 
+  # /usr/share/cfg2html/cfg2html-linux.sh: line 1002: hwinfo: command not found // 24.02.2025, rr # issuse #191
+  [ -x /usr/sbin/hwinfo ] && exec_command "/usr/sbin/hwinfo --gfxcard" "GPU Details" # modified on 20250226 by edrulrd
+  [ -x /usr/bin/inxi ] && exec_command "inxi -x --full -c0" "Hardware Details (inxi)" # 24.02.2025, Ralph Roth # issuse #191 # modified on 20250226 by edrulrd
+  [ -x /usr/bin/raspinfo ] && exec_command "/usr/bin/raspinfo" "Raspberry Pi Details" # 17.03.2025, Ralph Roth
+  # NOTE: raspinfo dumpes the file raspinfo.txt to the current directory. So it is discussable if this is a benefit, annoyance or a "bug".
+
   RAM=$(awk -F': *' '/MemTotal/ {print $2}' /proc/meminfo)
   # RAM=`cat /proc/meminfo | grep MemTotal | awk -F\: '{print $2}' | awk -F\  '{print $1 " " $2}'`
   exec_command "echo ${RAM}" "Physical Memory"
@@ -1182,7 +1248,7 @@ inc_heading_level
     [ -f /proc/asound/devices ] && exec_command "cat /proc/asound/devices" "Sound devices"
     [ -f /proc/asound/pcm ] && exec_command "cat /proc/asound/pcm" "Sound pcm"
   fi
-  exec_command "cat /proc/dma" "DMA Devices"
+  [ -r /proc/dma ] && exec_command "cat /proc/dma" "DMA Devices"  ## not available on RPi! RR, 17.03.2025
   if [ -f /proc/tty/driver/serial ] ; then
     exec_command "grep -v unknown /proc/tty/driver/serial" "Serial Devices"
   fi
@@ -1270,14 +1336,29 @@ then # else skip to next paragraph
     # show packages that are marked as being manually installed # added on 20240303 by edrulrd
     which apt-mark 2>/dev/null 1>&2 && exec_command "apt-mark showmanual | column -c ${CFG_TEXTWIDTH}" "Manually Installed Packages" # added on 20240303 by edrulrd
     exec_command "dpkg -C" "Misconfigured Packages"
-#   # { changed/added 25.11.2003 (14:29) by Ralph Roth }
+    ## { changed/added 25.11.2003 (14:29) by Ralph Roth }
     if [ -x /usr/bin/deborphan ] ; then
       exec_command "deborphan" "Orphaned Packages"
       AddText "Hint: deborphan | xargs aptitude -y purge"   # rar, 16.02.04
     fi
     exec_command "dpkg -l" "Detailed list of installed Packages"
     AddText "$(dpkg --version|grep program)"
-    exec_command "grep -vE '^#|^ *$' /etc/apt/sources.list" "Package Source repositories" # modified on 20240119 by edrulrd
+
+    if [ -f /etc/apt/sources.list ] || [ -d /etc/apt/sources.list.d ] ; then # modified on 20260409 by edrulrd
+      exec_command "" "Package Source repositories:" # added on 20250210 by edrulrd
+    fi # modified on 20260409 by edrulrd
+    if [ -f /etc/apt/sources.list ] ; then
+      exec_command "grep -vE '^#|^ *$' /etc/apt/sources.list" "/etc/apt/sources.list" # modified on 20260409 by edrulrd
+    fi
+    if [ -d /etc/apt/sources.list.d ] ; then
+      for FILE in /etc/apt/sources.list.d/* # added on 20250210 by edrulrd
+      do
+        [ -f "${FILE}" ] && if [ "$(grep -cvE "'^#|^ *$'" "${FILE}")" -gt 0 ] ; then # confirm there is at least one # added on 20250210 by edrulrd
+          exec_command "grep -vE '^#|^ *$' ${FILE}" "${FILE}" # added on 20250210 by edrulrd
+        fi
+      done
+    fi
+
     [ -x /usr/bin/dpigs ] && exec_command "/usr/bin/dpigs -H" "Largest installed packages" # added -H # modified on 20240119 by edrulrd
     if [ -x /usr/bin/debconf-get-selections ]; then
       AddText "Debian Settings"
@@ -1285,6 +1366,9 @@ then # else skip to next paragraph
       AddText "cat this_list | debconf-set-selections -v "
       exec_command "/usr/bin/debconf-get-selections" "Debian Package Configuration Values"
     fi
+    # seems we don't have anything like rpm -qa --last, so here is an workaround:
+    exec_command "grep -E ' install | upgrade ' /var/log/dpkg.log | awk '{print \$3, \$1, \$2, \$4}' | tail -30"  "Last installed or upgraded packages" # rr, 27.09.2024
+
   fi
   # end Debian
 
@@ -1501,7 +1585,7 @@ inc_heading_level
 
     if [ -x /usr/sbin/kdumptool ]
     then
-         ##CHANGED##FIXED## 20150304 by Ralph Roth
+         ##CHANGED##FIXED## 20150304 by Ralph Roth || TODO: SLES15SP6 no dump_config, find_kernel, print_target anymore
 	 exec_command "/usr/sbin/kdumptool dump_config; echo; /usr/sbin/kdumptool find_kernel; echo; /usr/sbin/kdumptool print_target" "Kdump Status (kdumptool)"
     else
       if [ -x "$(which kdumpctl 2>/dev/null)" ] ; then # modified on 20201009 by edrulrd # added /dev/null # modified on 20240202 by edrulrd
@@ -1734,7 +1818,7 @@ then # else skip to next paragraph
     fi
 
     exec_command "netstat -s" "Summary statistics for each protocol"
-    exec_command "netstat -i" "Kernel Interface table"
+    exec_command "netstat -i | column -t" "Kernel Interface table"
     # MiMe: iptables since 2.4.x
     # MiMe: iptable_nat realisiert dabei das Masquerading
     # MiMe: Details stehen in /proc/net/ip_conntrack
@@ -1753,7 +1837,7 @@ then # else skip to next paragraph
 
   if [ "$(which ss 2>/dev/null)" ] # check if the command is in the program's path # added on 20240119 by edrulrd
   then
-    exec_command "ss -planeto" "TCP Listening Sockets Statistics" # changed 20131211 by Ralph Roth # modified on 20240119 by edrulrd
+    exec_command "ss -planeto 2>/dev/null" "TCP Listening Sockets Statistics" # changed 20131211 by Ralph Roth # modified on 20250209 by edrulrd
     exec_command "ss -planeuo" "UDP Listening Sockets Statistics" # UDP and listening? :) # modified on 20240119 by edrulrd
   fi # ss
   if [ "$(which pminfo 2>/dev/null)" ] # check if the command is in the program's path # Added on 20240119 by edrulrd
@@ -1862,7 +1946,7 @@ then # else skip to next paragraph
   [ -r /etc/bind/named.boot ] && exec_command "grep -v '^;' /etc/named.boot"  "DNS/Named"
 
   if [ -s /etc/dnsmasq.conf ] ; then
-     exec_command "cat /etc/dnsmasq.conf | grep -vE '^#|^ *$'; which systemctl 2>/dev/null 1>&2 && systemctl status dnsmasq" "DNSMASQ" # check for systemctl before checking status # modified on 20240411 by edrulrd
+     exec_command "cat /etc/dnsmasq.conf | grep -vE '^#|^ *$'; which systemctl 2>/dev/null 1>&2 && systemctl status dnsmasq 2>&1" "DNSMASQ" # check for systemctl before checking status # modified on 20250209 by edrulrd
   fi
 
   if [ -s /etc/nscd.conf ] ; then
@@ -1895,11 +1979,14 @@ then # else skip to next paragraph
           exec_command "/usr/sbin/postconf -h mail_version" "Postfix Version"
           ;;
         *sendmail)
-          exec_command "${MTA} -d0.1 < /dev/null | grep Version ; grep ^DZ /etc/mail/sendmail.cf" "Sendmail version"
-          SMARTHOST=$(grep -e "^DS" /etc/mail/sendmail.cf | sed s/^DS//g)
+          if [ -r /etc/mail/sendmail.cf ]  ## hopefully a fix for: grep: /etc/mail/sendmail.cf: No such file or directory - 24.02.2025, rr
+          then
+            exec_command "${MTA} -d0.1 < /dev/null | grep Version ; grep ^DZ /etc/mail/sendmail.cf" "Sendmail Version"
+            SMARTHOST=$(grep -e "^DS" /etc/mail/sendmail.cf | sed s/^DS//g)
+            #  From cfg2html-hpux
+            exec_command "cat $(grep -e '^Kmailertable' /etc/mail/sendmail.cf | cut -d ' ' -f 4 | sed s/\.db//) /dev/null | grep -vE '^#|^ *$'" "Sendmail Mailertable"
+          fi
           exec_command "echo '\$Z' |/usr/sbin/sendmail -bt -d0.1; echo Smart Relay Host=${SMARTHOST}" "Detailed Sendmail Configuration"   # From cfg2html-hpux
-          #  From cfg2html-hpux
-          exec_command "cat $(grep -e '^Kmailertable' /etc/mail/sendmail.cf | cut -d ' ' -f 4 | sed s/\.db//) /dev/null | grep -vE '^#|^ *$'" "Sendmail Mailertable"
           ;;
         *exim?) # added on 20240202 by edrulrd
           exec_command "${MTA} --version | grep version" "Sendmail version ($MTA)" # added on 20240202 by edrulrd
@@ -2116,7 +2203,23 @@ then # else skip to next paragraph
 
     if [ -x /sbin/sysctl ] ; then ##  11.01.2010, 10:44 modified by Ralph Roth
       exec_command "/sbin/sysctl -a 2> /dev/null | sort -u | column -c ${CFG_TEXTWIDTH}" "Configured Kernel variables at runtime"  ## rr, 20120212 # added column # modified on 20240119 by edrulrd
-      exec_command "cat /etc/sysctl.conf | sort -u |grep -v -e ^# -e ^$" "Configured Kernel variables in /etc/sysctl.conf" # minor title change # modified on 20240119 by edrulrd
+      # check for multiple locations for settings as per sysctl.conf manpage
+      if [ "$(cat /etc/sysctl.d/*.conf  \
+                  /run/sysctl.d/*.conf \
+                  /usr/local/lib/sysctl.d/*.conf \
+                  /usr/lib/sysctl.d/*.conf \
+                  /lib/sysctl.d/*.conf \
+                  /etc/sysctl.conf 2> /dev/null |
+             grep -c -vE "^( |	)*#|^( |	)*$" )" -gt 0 ] ; then # any uncoomented settings exist? # added on 20250208 by edrulrd
+         exec_command "cat /etc/sysctl.d/*.conf \
+                           /run/sysctl.d/*.conf \
+                           /usr/local/lib/sysctl.d/*.conf \
+                           /usr/lib/sysctl.d/*.conf \
+                           /lib/sysctl.d/*.conf \
+                           /etc/sysctl.conf 2> /dev/null |
+                       grep -vE '^( |	)*#|^( |	)*$' |
+                       sort -t= -u -k 1,1" "Configured Kernel variables in sysctl.conf files" # get the 1st setting found in the files # modified on 20250208 by edrulrd
+      fi
     fi
 
     # Added by Dusan Baljevic on 15 July 2013
@@ -2349,7 +2452,8 @@ then
   inc_heading_level
   exec_command "ps -ef | grep -E 'puppetmaster[d]|puppet maste[r]'" "Active Puppet Master (prior to version 5)"
   exec_command "ps -ef | grep -E 'puppet[d]'" "Active Puppet Client (prior to version 5)"
-  exec_command "puppetca -l -a" "Puppet certificates (prior to version 5)"
+  # fix? 12.03.2025 modified by Ralph Roth
+  which puppetca 2> /dev/null && exec_command "puppetca -l -a" "Puppet certificates (prior to version 5)"
   exec_command "ps -ef | grep -E 'puppetserve[r]'" "Active Puppet Master (version 5)"
   exec_command "ps -ef | grep -E 'puppet agen[t]'" "Active Puppet Client (version 5)"
   exec_command "${PUPPETEXE} ca list --all" "Puppet certificates (version 5)"
@@ -2422,7 +2526,7 @@ if [ -s "${SSSDCONF}" ] ; then
     paragraph "System Security Services Daemon (SSSD)"
     inc_heading_level
     exec_command "cat ${SSSDCONF}" "SSSD configuration"
-    exec_command "realm list" "List enrollments in realms"
+    exec_command "realm list" "List enrollments in realms"  ## TODO: check if realm is installed/might not be installed!
     [ -x /usr/bin/systemctl ] && exec_command "/usr/bin/systemctl status sssd" "Systemd SSSD status"
     exec_command "getent passwd" "List all users"  ## Fix-Typing mistake result in invalid command (Issue #175)
     exec_command "getent group" "List all groups"

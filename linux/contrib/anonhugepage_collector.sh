@@ -1,4 +1,5 @@
-# @(#) $Id: anonhugepage_collector.sh,v 6.4 2021/03/17 13:50:32 ralph Exp $
+#!/bin/bash
+# @(#) $Id: anonhugepage_collector.sh,v 6.7 2026/01/29 12:59:27 ralph Exp $
 # -------------------------------------------------------------------------
 # vim:ts=8:sw=4:sts=4
 # atom:set fileencoding=utf8 fileformat=unix filetype=shell tabstop=2 expandtab:
@@ -7,6 +8,7 @@
 # Collector that shows all processes that had allocated anon huge pages
 
 # Might be broken with openSUSE 15.x and SLES 15.x
+# 20.02.2025 - SLES15 SP5++ -> HANA: SAP strongly recommends to disable Transparent Huge Pages (THP) on all HANA servers (should be [never] or [madvise] (15SP5++) , see also SAP Note 1954788, 2031375 + 2131662(2025)
 
 echo "THP/Huge Pages Overview (/proc/meminfo)"
 grep Huge /proc/meminfo
@@ -28,9 +30,10 @@ do
 
     #echo $KBAM
     # maybe /proc/$PID/numa_maps is useful for further details??
-    if [ -n ${KBAM} ]
+    if [ -n "${KBAM}" ]
     then
-      echo "${KBAM}  (${PID})  " $(cat /proc/$PID/cmdline)
+      ## ./anonhugepage_collector.sh: line 35: warning: command substitution: ignored null byte in input
+      echo "${KBAM}  (${PID})   $(cat /proc/$PID/cmdline| tr '\0' ' ')"
     fi
   fi # vanished meanwhile?
 done | sort -nur | awk ' { sum += $1; print $0; } END { printf "\n%d kb total anon huge pages\n", sum } ' 2>/dev/null

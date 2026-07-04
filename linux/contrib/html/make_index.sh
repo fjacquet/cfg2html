@@ -1,12 +1,11 @@
-#!/usr/bin/sh
+#!/bin/bash
 ## needs maybe tweaks for HP-UX, AIX or Solaris?
 #######################################################################
-# @(#) $Id: make_index.sh,v 6.17 2023/02/18 11:42:27 ralph Exp $
+# @(#) $Id: make_index.sh,v 6.19 2025/02/28 18:04:52 ralph Exp $
 
 # Revision 6.14  2020/10/29 13:19:54  ralph
 # Fixes for make_index.sh (see issue #144)
 # Fixes for regression in cfg2html-linux and crontab collecting
-#
 # Revision 6.12  2018/01/04 22:26:07  ralph
 # Revision 6.10.1.1  2013-09-12 16:13:19  ralph
 # Initial 6.10.1 import from GIT Hub, 12.09.2013
@@ -23,7 +22,7 @@
 # Enhanced cron collector
 #
 #######################################################################
-# (c) 1999-2023 by cfg2html@hotmail.com, All Rights Reserved, Freeware
+# (c) 1999-2025 by cfg2html@hotmail.com, All Rights Reserved, Freeware
 # http://rose.rult.at/
 #######################################################################
 # Simply run this shell script in the directory, where your cfg2html
@@ -40,7 +39,7 @@ OUT=index.htm
 echo "Make_Index for Cfg2Html (Linux, HP-UX and *nix)"
 echo "-------------------------------------------------------------------------"
 echo "Make_Index creates an index of your cfg2html collected hosts files"
-echo "\$Id: make_index.sh,v 6.17 2023/02/18 11:42:27 ralph Exp $"
+echo "\$Id: make_index.sh,v 6.19 2025/02/28 18:04:52 ralph Exp $"
 echo ""
 
 cat >$OUT<<EOF
