@@ -3155,6 +3155,12 @@ AddText "You can customize this paragraph by editing the file: ${CONFIG_DIR}/fil
 dec_heading_level
 
 close_html
+
+#
+# Additional, modern-CSS HTML report -- purely additive, does not affect
+# the classic ${HTML_OUTFILE} above in any way.
+#
+generate_pretty_html
 ###########################################################################
 ###########################################################################
 ######     Creating gzipped TAR File for all needed files together. Added by Jeroen Kleen HP EMEA ISS CC

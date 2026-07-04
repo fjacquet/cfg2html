@@ -765,6 +765,12 @@ dec_heading_level
 
 close_html
 
+#
+# Additional, modern-CSS HTML report -- purely additive, does not affect
+# the classic $HTML_OUTFILE above in any way.
+#
+generate_pretty_html
+
 ###########################################################################
 
 

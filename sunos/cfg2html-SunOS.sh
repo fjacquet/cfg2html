@@ -1637,6 +1637,12 @@ fi
 
 close_html
 
+#
+# Additional, modern-CSS HTML report -- purely additive, does not affect
+# the classic $HTML_OUTFILE above in any way.
+#
+generate_pretty_html
+
 logger "End of $VERSION"
 _echo "\n"
 line
