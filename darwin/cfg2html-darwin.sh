@@ -177,6 +177,24 @@ dec_heading_level
 fi  # end of CFG_KERNEL paragraph
 ##############################################################################
 
+#
+# CFG_NETWORK
+#
+
+if [ "${CFG_NETWORK}" != "no" ]
+then # else skip to next paragraph
+
+paragraph "macOS Network"
+inc_heading_level
+  exec_command "ifconfig" "Network interfaces"
+  exec_command "networksetup -listallhardwareports" "Network hardware ports"
+  exec_command "netstat -rn" "Routing table"
+  exec_command "scutil --dns" "DNS configuration"
+dec_heading_level
+
+fi  # end of CFG_NETWORK paragraph
+##############################################################################
+
 dec_heading_level
 close_html
 
