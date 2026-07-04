@@ -217,6 +217,22 @@ dec_heading_level
 fi  # end of CFG_SOFTWARE paragraph
 ##############################################################################
 
+#
+# CFG_APPLICATIONS
+#
+
+if [ "${CFG_APPLICATIONS}" != "no" ]
+then # else skip to next paragraph
+
+paragraph "macOS Applications and Subsystems"
+inc_heading_level
+  exec_command "ls -la /Applications" "Files in /Applications"
+  exec_command "launchctl list" "Loaded launchd services (LaunchAgents/LaunchDaemons)"
+dec_heading_level
+
+fi  # end of CFG_APPLICATIONS paragraph
+##############################################################################
+
 dec_heading_level
 close_html
 
