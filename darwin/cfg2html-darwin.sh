@@ -142,6 +142,24 @@ dec_heading_level
 fi  # end of CFG_HARDWARE paragraph
 ##############################################################################
 
+#
+# CFG_FILESYS
+#
+
+if [ "${CFG_FILESYS}" != "no" ]
+then # else skip to next paragraph
+
+paragraph "macOS Filesystems"
+inc_heading_level
+  exec_command "diskutil list" "Disks and partitions"
+  exec_command "diskutil apfs list" "APFS containers and volumes"
+  exec_command "df -h" "Filesystem usage"
+  exec_command "mount" "Mounted filesystems"
+dec_heading_level
+
+fi  # end of CFG_FILESYS paragraph
+##############################################################################
+
 dec_heading_level
 close_html
 
