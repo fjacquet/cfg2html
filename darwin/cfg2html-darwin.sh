@@ -1,3 +1,8 @@
+# shellcheck disable=SC2034,SC2148,SC2155
+# (note - shellcheck directive needs to be at the very top to be effective over the whole file)
+# SC2034 - variables are used across files sourced together (this file, darwin/lib/*.sh), not visible to a single-file scan
+# SC2148 - dot-sourced by the wrapper, never executed directly, no shebang by design
+# SC2155 - declare-and-assign-separately not needed (e.g., export _logger="$(which logger)")
 # cfg2html - macOS (Darwin) driver
 # -----------------------------------------------------------------------------------------
 #  system collector script - macOS (Darwin) port
