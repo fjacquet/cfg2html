@@ -160,6 +160,23 @@ dec_heading_level
 fi  # end of CFG_FILESYS paragraph
 ##############################################################################
 
+#
+# CFG_KERNEL
+#
+
+if [ "${CFG_KERNEL}" != "no" ]
+then # else skip to next paragraph
+
+paragraph "macOS Kernel"
+inc_heading_level
+  exec_command "sysctl kern" "kern.* sysctl values"
+  exec_command "kmutil showloaded" "Loaded kernel extensions"
+  exec_command "nvram boot-args" "Kernel boot arguments"
+dec_heading_level
+
+fi  # end of CFG_KERNEL paragraph
+##############################################################################
+
 dec_heading_level
 close_html
 
